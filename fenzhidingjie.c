@@ -1,32 +1,22 @@
-#define printf __mingw_printf
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <time.h>
- 
-#define R 10      // 定义算法轮数
-#define N 16      // 定义s盒个数
-#define s_in_L 4  // 定义s盒输入比特
-#define s_out_L 4 // 定义s盒输出比特
-#define L (1 << (s_in_L + s_out_L))
-#define L1 (1 << s_in_L)
-#define L2 (1 << s_out_L)
-#define base (L2 - 1)
- 
+#include "fenzhidingjie.h"
+
 int Rr;
-long double DiffP[R][N]; // 每轮的差分概率
-int Alpha[R][N];         // 每轮的输入差分
-int Beta[R][N];          // 每轮的输出差分
-int maxAlpha[R][N];      // 每轮的最优输入差分
-int maxBeta[R][N];       // 每轮的最优输出差分
+long double DiffP[R][N]; // Differential probability for each round
+int Alpha[R][N];         // Input differential for each round
+int Beta[R][N];          // Output differential for each round
+int maxAlpha[R][N];      // Optimal input differential for each round
+int maxBeta[R][N];       // Optimal output differential for each round
 long double Pestim;
 int flag;
-long double all_sbdiff_p[N][L]; // 所有s盒的差分概率
-long double pn_sb[N];           // n个s盒的最优概率
-long double Pbest[R];           // 每轮的最优概率
-int actIndex[R][N];             // 活跃s盒的下标
-int actIndexLength[R];          // 活跃s盒的个数
+long double all_sbdiff_p[N][L]; // Differential probability for all s-boxes
+long double pn_sb[N];           // Optimal probability for n s-boxes
+long double Pbest[R];           // Optimal probability for each round
+int actIndex[R][N];             // Index of active s-boxes
+int actIndexLength[R];          // Number of active s-boxes
 long double sboxdiffprobability[L];
 int maxbacktable[N][L2];
 int maxforwardtable[N][L1];
@@ -36,33 +26,8 @@ int combianIndex = 0;
 int data[N];
 long double *arr;
 int decreasort[L1][L2];
-int pbox[64] = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54, 7, 23, 39, 55, 8, 24, 40, 56, 9, 25, 41, 57, 10, 26, 42, 58, 11, 27, 43, 59, 12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63};
- 
-void Round(int r);
-void SubRound(int r, int n);
-void FirstRound(int M[], int n);
-void init();
-void calculateDifferential();
-void all_sbdiff_pfun();
-void Decreasesort();
-void maxback();
-void maxforward();
-void pn_sbfun();
-void calculateCombianAndCombianSize();
-void generateCombinations(int n, int start, int *buffer, int bufferIndex);
-int sumcombian(int n);
-void activesbox(int begin, int end);
-void update(int begin, int end);
-long double product(int begin, int end);
-long double fmaxfun(long double data[], int begin, int end);
-void sortDoubleArray(long double array[], int size);
-void sort_indices(long double *array, int *indices, int n);
-int compare1(const void *a, const void *b);
-int compare2(const void *a, const void *b);
-void pboxfun(int *data);
-long double LastRound();
-int OptTrailSearch(long double Pestim);
-long double OptTrail();
+
+// Comparison function for qsort
 int compare1(const void *a, const void *b)
 {
     int index1 = *(int *)a;
@@ -73,6 +38,7 @@ int compare1(const void *a, const void *b)
         return -1;
     return 0;
 }
+// Comparison function
 int compare2(const void *a, const void *b)
 {
     long double arg1 = *(const long double *)a;
@@ -83,6 +49,7 @@ int compare2(const void *a, const void *b)
         return 1;
     return 0;
 }
+// Sorting function
 void sortDoubleArray(long double array[], int size)
 {
     qsort(array, size, sizeof(long double), compare2);
@@ -101,7 +68,7 @@ long double fmaxfun(long double data[], int begin, int end)
 }
 void sort_indices(long double *array, int *indices, int n)
 {
-    arr = array; // 设置全局变量
+    arr = array; // Set global variable
     for (int i = 0; i < n; i++)
     {
         indices[i] = i;
@@ -126,16 +93,16 @@ void generateCombinations(int n, int start, int *buffer, int bufferIndex)
 }
 void calculateCombianAndCombianSize()
 {
-    int totalSize = N * (1 << (N - 1));        // 计算combian的总大小
-    combian = malloc(totalSize * sizeof(int)); // 分配combian的大小
-    combianSize = malloc(N * sizeof(int));     // 存储每个n的组合数
-    int prevIndex = 0;                         // 用于计算每个n的组合数
+    int totalSize = N * (1 << (N - 1));        // Calculate the total size of combian
+    combian = malloc(totalSize * sizeof(int)); // Allocate size for combian
+    combianSize = malloc(N * sizeof(int));     // Store the number of combinations for each n
+    int prevIndex = 0;                         // Used to calculate the number of combinations for each n
     for (int n = 1; n <= N; n++)
     {
         int *buffer = malloc(n * sizeof(int));
         generateCombinations(n, 0, buffer, 0);
-        combianSize[n - 1] = (combianIndex - prevIndex) / n; // 存储n的组合数
-        prevIndex = combianIndex;                            // 更新prevIndex
+        combianSize[n - 1] = (combianIndex - prevIndex) / n; // Store the number of combinations for n
+        prevIndex = combianIndex;                            // Update prevIndex
         free(buffer);
     }
 }
@@ -173,9 +140,11 @@ void init()
         }
     }
 }
+//Assuming that the s-box is m*n, then sboxdiffprobability is 2^m*2^n, where p(i->j)=sboxdiffprobability[2^m*i+j]
 int sbox[L1] = {0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD, 0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2};
 void sboxfun(int *data)
 {
+    // data size is 2, each occupies two bits, a total of m bits, replace each one with sbox
     for (int i = 0; i < (1 << L1); i++)
     {
         data[i] = sbox[data[i]];
@@ -211,7 +180,8 @@ void all_sbdiff_pfun()
         {
             all_sbdiff_p[i][j] = sboxdiffprobability[j];
         }
-    }
+    } 
+ // note: the s-boxes are the same, for simplicity, only one can be used, but for generality, we use N s-boxes
 }
 long double product(int begin, int end)
 {
@@ -257,7 +227,7 @@ void activesbox(int begin, int end)
 void Decreasesort()
 {
     long double array[L2];
-    int *indices = malloc(L2 * sizeof(int)); // 索引数组
+    int *indices = malloc(L2 * sizeof(int)); // index of sorted array
     for (int i = 0; i < L1; i++)
     {
         for (int j = 0; j < L2; j++)
@@ -328,6 +298,7 @@ void maxforward()
     }
     return;
 }
+int pbox[64] = {0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51, 4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54, 7, 23, 39, 55, 8, 24, 40, 56, 9, 25, 41, 57, 10, 26, 42, 58, 11, 27, 43, 59, 12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63};
 void pboxfun(int *data)
 {
     int bits[64];
@@ -398,7 +369,7 @@ long double LastRound()
     }
     else
     {
-        printf("全0 error\n");
+        printf("all zero error\n");
     }
 }
 void Round(int r)
@@ -414,21 +385,18 @@ void SubRound(int r, int n)
 {
     if (n > actIndexLength[r - 1])
     {
- 
-        // 这里不用像论文一样把概率赋值,因为在每次改变值时都已经更新了概率
         int data[N];
         for (int i = 0; i < N; i++)
         {
             data[i] = Beta[r - 1][i];
         }
-        pboxfun(data); // 线性变换
+        pboxfun(data); // linear transformation
         for (int i = 0; i < N; i++)
         {
             Alpha[r][i] = data[i];
         }
         activesbox(1, r + 1);
         update(1, r + 1);
- 
         if (r + 1 < Rr)
         {
             Round(r + 1);
@@ -469,7 +437,7 @@ void SubRound(int r, int n)
             {
                 data[i] = Beta[r - 1][i];
             }
-            pboxfun(data); // 线性变换
+            pboxfun(data); // linear transformation
             int sum = 0;
             for (int i = 0; i < 16; i++)
             {
@@ -487,7 +455,6 @@ void SubRound(int r, int n)
             {
                 break;
             }
- 
             else
             {
                 update(r, r);
@@ -510,7 +477,7 @@ void FirstRound(int M[], int n)
     {
         data[i] = Beta[0][i];
     }
-    pboxfun(data); // 线性变换
+    pboxfun(data); // linear transformation
     for (int i = 0; i < N; i++)
     {
         Alpha[1][i] = data[i];
@@ -532,7 +499,7 @@ void FirstRound(int M[], int n)
     }
     return;
 }
-int OptTrailSearch(long double Pestim) // r大于等于2
+int OptTrailSearch(long double Pestim) // r>=2
 {
     int begin;
     long limit;
@@ -590,51 +557,4 @@ long double OptTrail()
         }
     }
     return Pestim;
-}
-int main()
-{
-    init();
-    calculateDifferential();
-    all_sbdiff_pfun();
-    Decreasesort();
-    maxback();
-    maxforward();
-    calculateCombianAndCombianSize();
-    pn_sbfun();
-    Pbest[0] = pn_sb[0];
- 
-    clock_t start, end;
-    double cpu_time_used = 0;
- 
-    for (Rr = 2; Rr < R + 1; Rr++)
-    {
-        start = clock();
-        Pbest[Rr - 1] = OptTrail();
-        end = clock();
-        cpu_time_used = cpu_time_used + ((double)(end - start)) / (CLOCKS_PER_SEC / 1000);
-        printf("%d轮 最优差分特征:\n", Rr);
-        for (int i = 0; i < Rr; i++)
-        {
-            for (int j = 0; j < N; j++)
-            {
-                printf("%d ", maxAlpha[i][j]);
-            }
-            printf("\n");
-            for (int j = 0; j < N; j++)
-            {
-                printf("%d ", maxBeta[i][j]);
-            }
-            printf("\n");
-        }
-    }
-    // 输出Pbest
-    printf("最优差分转移概率:\n");
-    for (int i = 1; i < R; i++)
-    {
-        printf("%Le ", Pbest[i]);
-    }
-    printf("\n%d轮程序运行时间: %g ms\n", R, cpu_time_used);
-    free(combian);
-    free(combianSize);
-    return 0;
 }
