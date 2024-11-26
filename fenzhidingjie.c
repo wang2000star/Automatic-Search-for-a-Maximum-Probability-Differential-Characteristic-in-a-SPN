@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 #include "fenzhidingjie.h"
 
 int Rr;
@@ -354,6 +350,8 @@ long double LastRound()
         }
         if (p >= Pestim)
         {
+            printf("p*:%.10Lf\n", p);
+            printf("Pestim*:%.10Lf\n", Pestim);
             flag = 0;
             Pestim = p;
             activesbox(1, Rr);
@@ -499,7 +497,7 @@ void FirstRound(int M[], int n)
     }
     return;
 }
-int OptTrailSearch(long double Pestim) // r>=2
+int OptTrailSearch() // r>=2
 {
     int begin;
     long limit;
@@ -536,6 +534,7 @@ int OptTrailSearch(long double Pestim) // r>=2
                 FirstRound(M, n);
             }
         }
+        printf("n=%d\n", n);
     }
     return flag;
 }
@@ -543,7 +542,8 @@ long double OptTrail()
 {
     Pestim = Pbest[Rr - 2] * pn_sb[0];
     flag = -1;
-    flag = OptTrailSearch(Pestim);
+    flag = OptTrailSearch();
+    printf("flag=%d\n", flag);
     while (1)
     {
         if (~flag)
@@ -552,8 +552,11 @@ long double OptTrail()
         }
         else
         {
+            printf("Pestim*=%Le\n", Pestim);
             Pestim = Pestim / 2;
-            OptTrailSearch(Pestim);
+            printf("Pestim*=%Le\n", Pestim);
+            flag = OptTrailSearch();
+            printf("flag=%d\n", flag);
         }
     }
     return Pestim;

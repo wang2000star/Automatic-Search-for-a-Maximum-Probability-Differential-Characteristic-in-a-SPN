@@ -63,7 +63,7 @@ int compare1(const void *a, const void *b);
 int compare2(const void *a, const void *b);
 void pboxfun(int *data);
 long double LastRound();
-int OptTrailSearch(long double Pestim);
+int OptTrailSearch();
 long double OptTrail();
 
 #endif

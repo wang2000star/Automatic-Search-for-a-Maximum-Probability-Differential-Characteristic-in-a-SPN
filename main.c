@@ -4,10 +4,12 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
+#include <float.h>
 #include "fenzhidingjie.h"
 
 int main()
 {
+    
     init();
     calculateDifferential();
     all_sbdiff_pfun();
@@ -25,6 +27,7 @@ int main()
     {
         start = clock();
         Pbest[Rr - 1] = OptTrail();
+        printf("Pestime= %Le\n", Pestim);
         end = clock();
         cpu_time_used = cpu_time_used + ((double)(end - start)) / (CLOCKS_PER_SEC / 1000);
 
@@ -47,12 +50,16 @@ int main()
     }
     // print Pbest
     printf("Optimal Differential Transition Probability:\n");
-    for (int i = 1; i < R; i++)
-    {
-        printf("%Le ", Pbest[i]);
+    for (int i = 1; i < R; i++) {
+        printf("%d: %.*Le\n",i+1, LDBL_DIG, Pbest[i]);
     }
-    printf("\n%d round running time: %g ms\n", R, cpu_time_used);
+    printf("%d round running time: %g ms\n", R, cpu_time_used);
     free(combian);
     free(combianSize);
+    // printf("Size of long double: %zu bytes\n", sizeof(long double));
+    // printf("Precision of long double: %d decimal digits\n", LDBL_DIG);
+    // printf("Minimum positive value of long double: %Le\n", LDBL_MIN);
+    // printf("Maximum positive value of long double: %Le\n", LDBL_MAX);
+    // printf("Epsilon value of long double: %Le\n", LDBL_EPSILON);
     return 0;
 }
